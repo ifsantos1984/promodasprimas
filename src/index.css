@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   PROMO DAS PRIMAS — Design System
+   Vibe: e-commerce vibrante, brasileiro, caloroso e divertido.
+   Toda cor em HSL. Nunca usar cores literais nos componentes.
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* --- Surfaces --- */
+    --background: 35 100% 98%;            /* creme quente */
+    --foreground: 240 14% 12%;            /* quase preto frio */
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 14% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 14% 12%;
+
+    /* --- Brand --- */
+    --primary: 14 100% 57%;               /* coral / laranja-vermelho */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 28 100% 62%;          /* laranja vivo */
+
+    --secondary: 340 95% 60%;             /* magenta / pink quente */
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 48 100% 55%;                /* amarelo promo */
+    --accent-foreground: 240 14% 12%;
+
+    --muted: 30 25% 94%;
+    --muted-foreground: 240 6% 38%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* feedback de preço */
+    --price-low: 142 71% 38%;             /* verde "menor preço" */
+    --price-low-foreground: 0 0% 100%;
+    --price-high: 24 95% 53%;             /* laranja "maior preço" */
+    --price-high-foreground: 0 0% 100%;
+
+    /* --- Plataformas --- */
+    --shopee: 14 100% 57%;
+    --shopee-foreground: 0 0% 100%;
+    --mercado-livre: 50 100% 50%;
+    --mercado-livre-foreground: 240 14% 12%;
+    --amazon: 36 100% 50%;
+    --amazon-foreground: 240 14% 12%;
+    --shein: 240 14% 12%;
+    --shein-foreground: 0 0% 100%;
+
+    --border: 30 20% 88%;
+    --input: 30 20% 88%;
+    --ring: 14 100% 57%;
+
+    --radius: 1rem;
+
+    /* --- Gradients --- */
+    --gradient-hero: linear-gradient(135deg, hsl(14 100% 57%) 0%, hsl(340 95% 60%) 50%, hsl(28 100% 62%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(48 100% 55%) 0%, hsl(14 100% 57%) 100%);
+    --gradient-cool-card: linear-gradient(160deg, hsl(0 0% 100%) 0%, hsl(35 100% 98%) 100%);
+    --gradient-promo: linear-gradient(90deg, hsl(340 95% 60%), hsl(14 100% 57%));
+
+    /* --- Shadows --- */
+    --shadow-sm: 0 1px 2px 0 hsl(14 50% 30% / 0.06);
+    --shadow-md: 0 4px 12px -2px hsl(14 50% 30% / 0.10);
+    --shadow-lg: 0 20px 40px -12px hsl(14 60% 30% / 0.18);
+    --shadow-glow: 0 0 40px hsl(14 100% 57% / 0.35);
+    --shadow-card: 0 8px 24px -8px hsl(340 50% 30% / 0.15);
+
+    /* --- Motion --- */
+    --transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* sidebar (admin) */
+    --sidebar-background: 240 14% 12%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 14 100% 57%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 8% 20%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 240 8% 22%;
+    --sidebar-ring: 14 100% 57%;
+  }
+
+  .dark {
+    --background: 240 14% 8%;
+    --foreground: 35 30% 96%;
+    --card: 240 14% 11%;
+    --card-foreground: 35 30% 96%;
+    --popover: 240 14% 11%;
+    --popover-foreground: 35 30% 96%;
+    --primary: 14 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 340 95% 60%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 8% 18%;
+    --muted-foreground: 240 6% 65%;
+    --accent: 48 100% 55%;
+    --accent-foreground: 240 14% 12%;
+    --border: 240 8% 22%;
+    --input: 240 8% 22%;
+    --ring: 14 100% 60%;
+    --gradient-cool-card: linear-gradient(160deg, hsl(240 14% 11%) 0%, hsl(240 14% 8%) 100%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    background-image:
+      radial-gradient(1200px 600px at 100% -10%, hsl(28 100% 62% / 0.10), transparent),
+      radial-gradient(900px 500px at -10% 10%, hsl(340 95% 60% / 0.08), transparent);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .font-display { font-family: 'Space Grotesk', system-ui, sans-serif; }
+  .text-balance { text-wrap: balance; }
+
+  .bg-gradient-hero { background-image: var(--gradient-hero); }
+  .bg-gradient-warm { background-image: var(--gradient-warm); }
+  .bg-gradient-promo { background-image: var(--gradient-promo); }
+  .bg-gradient-card { background-image: var(--gradient-cool-card); }
+
+  .text-gradient-hero {
+    background-image: var(--gradient-hero);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+}
