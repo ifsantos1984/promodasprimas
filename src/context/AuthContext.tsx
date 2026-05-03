@@ -41,16 +41,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // 2. Sessão atual depois
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       if (currentSession?.user) {
-        supabase
+        const { data } = await supabase
           .from("perfis")
           .select("is_admin")
           .eq("id", currentSession.user.id)
-          .maybeSingle()
-          .then(({ data }) => setIsAdmin(!!data?.is_admin));
+          .maybeSingle();
+        setIsAdmin(!!data?.is_admin);
       }
       setLoading(false);
     });

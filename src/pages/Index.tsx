@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Sparkles, Search, ChevronDown, Heart } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Heart, SlidersHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Produto, Plataforma, PLATAFORMA_LABEL } from "@/lib/produto";
+import { Produto, Plataforma } from "@/lib/produto";
 import { ProdutoCard } from "@/components/ProdutoCard";
 import { StatsBar } from "@/components/StatsBar";
 import { AdSlot } from "@/components/AdSlot";
@@ -16,15 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { MusicPlayer } from "@/components/MusicPlayer";
-import { Categoria, CATEGORIA_LABEL } from "@/lib/produto";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import Autoplay from "embla-carousel-autoplay";
+import { Categoria } from "@/lib/produto";
+import { MasonryGrid } from "@/components/MasonryGrid";
 
 type Sort = "menor_preco" | "maior_preco" | "recentes" | "maior_desconto";
 type Filtro = Plataforma | "todos";
@@ -59,8 +52,7 @@ export default function Index() {
   const [sort, setSort] = useState<Sort>("maior_desconto");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  const pluginAutoplay = useRef(Autoplay({ delay: 3500, stopOnInteraction: true }));
+  const [showFilters, setShowFilters] = useState(false);
 
   // Debounce manual da busca
   useEffect(() => {
@@ -78,7 +70,7 @@ export default function Index() {
       if (error) throw error;
       return data as Produto[];
     },
-    refetchInterval: 5 * 60 * 1000, // 5 min
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
 
@@ -96,13 +88,9 @@ export default function Index() {
 
   const adTopo = ads.find((a) => a.posicao === "topo");
   const adRodape = ads.find((a) => a.posicao === "rodape");
-  const adSidebar = ads.find((a) => a.posicao === "sidebar");
-  const adEntreCards = ads.find((a) => a.posicao === "entre_cards");
 
-  // mín/máx por plataforma para badges
-  const { lowestByPlatform, highestByPlatform } = useMemo(() => {
+  const { lowestByPlatform } = useMemo(() => {
     const low: Record<string, string> = {};
-    const high: Record<string, string> = {};
     const groups: Record<string, Produto[]> = {};
     produtos.forEach((p) => {
       groups[p.plataforma] = groups[p.plataforma] || [];
@@ -112,9 +100,8 @@ export default function Index() {
       if (list.length < 2) return;
       const sorted = [...list].sort((a, b) => a.preco - b.preco);
       low[plat] = sorted[0].id;
-      high[plat] = sorted[sorted.length - 1].id;
     });
-    return { lowestByPlatform: low, highestByPlatform: high };
+    return { lowestByPlatform: low };
   }, [produtos]);
 
   const filtrados = useMemo(() => {
@@ -141,7 +128,6 @@ export default function Index() {
   const destaques = useMemo(() => produtos.filter((p) => p.destaque), [produtos]);
 
   const handleView = useCallback(async (p: Produto) => {
-    // registra clique (fire-and-forget)
     supabase.from("cliques").insert({
       produto_id: p.id,
       user_agent: navigator.userAgent,
@@ -152,234 +138,228 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background selection:bg-primary/20">
       <MusicPlayer />
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-lg">
-        <div className="container flex h-16 items-center justify-between gap-4">
-          <a href="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-hero shadow-glow">
-              <Heart className="h-5 w-5 fill-primary-foreground text-primary-foreground" />
+      
+      {/* HEADER - Pinterest Style */}
+      <header className="sticky top-0 z-40 bg-background/95 py-4 backdrop-blur-md">
+        <div className="container flex items-center gap-4">
+          <Link to="/" className="flex shrink-0 items-center gap-3 transition-transform hover:scale-105 active:scale-95">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary p-2">
+              <Heart className="h-6 w-6 fill-white text-white" />
             </div>
-            <div className="leading-tight">
-              <h1 className="font-display text-lg font-bold">Promo das Primas</h1>
-              <p className="hidden text-[10px] uppercase tracking-widest text-muted-foreground sm:block">
-                Ofertas garimpadas a dedo
-              </p>
-            </div>
-          </a>
-          <div className="hidden flex-1 max-w-md items-center md:flex">
-            <div className="relative w-full">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar oferta..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-          <Link to="/login" className="text-xs text-muted-foreground hover:text-foreground">
-            Admin
+            <span className="hidden font-bold tracking-tighter text-foreground sm:block text-xl">Promo das Primas</span>
           </Link>
+          
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar as melhores ofertas..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-12 w-full rounded-full border-none bg-secondary pl-12 text-base ring-offset-transparent focus-visible:ring-2 focus-visible:ring-primary/20"
+            />
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn("rounded-full", showFilters && "bg-secondary")}
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+            </Button>
+            {/* Admin oculto conforme solicitado */}
+          </div>
         </div>
       </header>
 
-      {/* HERO */}
-      <section className="border-b border-border/60 bg-gradient-hero py-10 text-primary-foreground md:py-16">
-        <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl"
+      {/* FILTROS EXPANSÍVEIS */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.section
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden border-b border-border bg-background"
           >
-            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/20 px-3 py-1 text-xs font-medium backdrop-blur">
-              <Sparkles className="h-3 w-3" /> Atualizado a cada 5 minutos
-            </div>
-            <h2 className="font-display text-4xl font-bold leading-tight md:text-6xl text-balance">
-              Achados de quem entende de <span className="italic">promoção</span>.
-            </h2>
-            <p className="mt-3 text-base text-primary-foreground/90 md:text-lg max-w-2xl">
-              As melhores ofertas da Shopee, Mercado Livre, Amazon e Shein —
-              comparadas, garimpadas e prontinhas pra você economizar.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+            <div className="container py-6">
+              <div className="flex flex-col gap-6">
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Plataformas</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {FILTROS.map((f) => (
+                      <Button
+                        key={f.value}
+                        size="sm"
+                        variant={filtro === f.value ? "default" : "secondary"}
+                        onClick={() => setFiltro(f.value)}
+                        className="rounded-full font-bold"
+                      >
+                        {f.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
 
-      {/* CARROSSEL DE DESTAQUES */}
-      {destaques.length > 0 && (
-        <section className="bg-muted/30 py-6 border-b border-border/60">
-          <div className="container">
-            <div className="mb-4 flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <h3 className="font-display text-lg font-bold">Ofertas em Destaque</h3>
-            </div>
-            <Carousel
-              plugins={[pluginAutoplay.current]}
-              opts={{ loop: true, align: "start" }}
-              className="w-full"
-            >
-              <CarouselContent className="-ml-2 md:-ml-4">
-                {destaques.map((d) => (
-                  <CarouselItem key={d.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
-                    <ProdutoCard
-                      produto={d}
-                      onView={() => handleView(d)}
-                      lowestId={lowestByPlatform[d.plataforma]}
-                      highestId={highestByPlatform[d.plataforma]}
-                    />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <div className="hidden md:block">
-                <CarouselPrevious className="-left-4 bg-background/80 hover:bg-background" />
-                <CarouselNext className="-right-4 bg-background/80 hover:bg-background" />
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Categorias</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {FILTROS_CATEGORIA.map((f) => (
+                      <Button
+                        key={f.value}
+                        size="sm"
+                        variant={filtroCategoria === f.value ? "default" : "secondary"}
+                        onClick={() => setFiltroCategoria(f.value)}
+                        className="rounded-full font-bold"
+                      >
+                        {f.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Ordenar por</h4>
+                  <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
+                    <SelectTrigger className="w-[200px] rounded-full bg-secondary border-none font-bold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="maior_desconto">Maior desconto</SelectItem>
+                      <SelectItem value="menor_preco">Menor preço</SelectItem>
+                      <SelectItem value="maior_preco">Maior preço</SelectItem>
+                      <SelectItem value="recentes">Mais recentes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </Carousel>
-          </div>
-        </section>
-      )}
+            </div>
+          </motion.section>
+        )}
+      </AnimatePresence>
 
-      {/* AD TOPO */}
-      {adTopo && (
-        <div className="container py-4">
-          <AdSlot codigo={adTopo.codigo} posicao="topo" />
-        </div>
-      )}
-
-      <main className="container py-8 md:py-10">
-        {/* MOBILE SEARCH */}
-        <div className="mb-5 md:hidden">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar oferta..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
-
+      <main className="container py-8">
         {/* STATS */}
-        <div className="mb-6">
-          <StatsBar produtos={produtos} />
-        </div>
+        {!showFilters && (
+          <div className="mb-8">
+            <StatsBar produtos={produtos} />
+          </div>
+        )}
 
-        {/* FILTROS + SORT */}
-        <div className="mb-6 flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2">
-              {FILTROS.map((f) => (
-                <Button
-                  key={f.value}
-                  size="sm"
-                  variant={filtro === f.value ? "default" : "outline"}
-                  onClick={() => setFiltro(f.value)}
-                  className={cn(
-                    "rounded-full",
-                    filtro === f.value && "bg-gradient-hero text-primary-foreground border-transparent shadow-md",
-                  )}
-                >
-                  {f.label}
-                </Button>
+        {/* OFERTAS EM DESTAQUE */}
+        {destaques.length > 0 && (
+          <section className="mb-12">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              <h2 className="text-xl font-bold tracking-tight">Ofertas em Destaque</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5">
+              {destaques.slice(0, 5).map((p) => (
+                <ProdutoCard
+                  key={p.id}
+                  produto={p}
+                  isLowestInPlatform={lowestByPlatform[p.plataforma] === p.id}
+                  onView={handleView}
+                />
               ))}
             </div>
-            <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
-              <SelectTrigger className="w-[200px] rounded-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="maior_desconto">Maior desconto</SelectItem>
-                <SelectItem value="menor_preco">Menor preço</SelectItem>
-                <SelectItem value="maior_preco">Maior preço</SelectItem>
-                <SelectItem value="recentes">Mais recentes</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          </section>
+        )}
 
-          <div className="flex flex-wrap gap-2">
-            {FILTROS_CATEGORIA.map((f) => (
-              <Button
-                key={f.value}
-                size="sm"
-                variant={filtroCategoria === f.value ? "secondary" : "ghost"}
-                onClick={() => setFiltroCategoria(f.value)}
-                className="rounded-full text-xs font-medium"
-              >
-                {f.label}
-              </Button>
-            ))}
+        {/* AD TOPO */}
+        {adTopo && (
+          <div className="mb-8">
+            <AdSlot codigo={adTopo.codigo} posicao="topo" />
           </div>
-        </div>
+        )}
 
-        {/* GRID + SIDEBAR */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr,300px]">
-          <div>
-            {isLoading ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <Skeleton key={i} className="aspect-[3/4] w-full" />
-                ))}
-              </div>
-            ) : filtrados.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
-                <p className="font-display text-xl font-semibold">Nenhuma oferta encontrada</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Tente outro filtro ou volte mais tarde — atualizamos toda hora!
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                {filtrados.map((p, idx) => (
-                  <div key={p.id} className="contents">
-                    <ProdutoCard
-                      produto={p}
-                      isLowestInPlatform={lowestByPlatform[p.plataforma] === p.id}
-                      isHighestInPlatform={highestByPlatform[p.plataforma] === p.id}
-                      onView={handleView}
-                    />
-                    {/* AD entre_cards a cada 8 */}
-                    {adEntreCards && (idx + 1) % 8 === 0 && (
-                      <div className="col-span-full">
-                        <AdSlot codigo={adEntreCards.codigo} posicao="entre_cards" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* MASONRY GRID */}
+        <div>
+          <div className="mb-6 flex items-center gap-3">
+             <h2 className="text-xl font-bold tracking-tight">Todas as Ofertas</h2>
           </div>
-
-          {/* SIDEBAR */}
-          {adSidebar && (
-            <aside className="hidden lg:block">
-              <div className="sticky top-24">
-                <AdSlot codigo={adSidebar.codigo} posicao="sidebar" />
+          {isLoading ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {Array.from({ length: 15 }).map((_, i) => (
+                <Skeleton key={i} className="aspect-[2/3] w-full rounded-[2rem]" />
+              ))}
+            </div>
+          ) : filtrados.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="mb-4 rounded-full bg-secondary p-6">
+                <Search className="h-12 w-12 text-muted-foreground" />
               </div>
-            </aside>
+              <p className="text-xl font-bold">Ops! Nenhuma oferta encontrada</p>
+              <p className="mt-2 text-muted-foreground">Tente ajustar seus filtros ou busca.</p>
+            </div>
+          ) : (
+            <MasonryGrid>
+              {filtrados.map((p) => (
+                <ProdutoCard
+                  key={p.id}
+                  produto={p}
+                  isLowestInPlatform={lowestByPlatform[p.plataforma] === p.id}
+                  onView={handleView}
+                />
+              ))}
+            </MasonryGrid>
           )}
         </div>
+
+        {/* AD RODAPÉ */}
+        {adRodape && (
+          <div className="mt-12 py-4">
+            <AdSlot codigo={adRodape.codigo} posicao="rodape" />
+          </div>
+        )}
       </main>
 
-      {/* AD RODAPÉ */}
-      {adRodape && (
-        <div className="container py-4">
-          <AdSlot codigo={adRodape.codigo} posicao="rodape" />
-        </div>
-      )}
-
       {/* FOOTER */}
-      <footer className="border-t border-border/60 bg-card/40 py-8">
-        <div className="container flex flex-col items-center gap-2 text-center text-xs text-muted-foreground">
-          <p className="font-display text-base font-bold text-foreground">
-            Promo das Primas <span className="text-primary">♥</span>
-          </p>
-          <p>Promoções selecionadas a dedo · alguns links são de afiliados</p>
+      <footer className="py-16 border-t border-border bg-secondary/30">
+        <div className="container">
+          <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                  <Heart className="h-4 w-4 fill-white text-white" />
+                </div>
+                <span className="font-bold tracking-tight">Promo das Primas</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                As melhores ofertas da internet, garimpadas diariamente para você economizar com segurança.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="mb-4 text-sm font-bold uppercase tracking-widest text-foreground">Institucional</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/sobre" className="hover:text-primary transition-colors">Sobre Nós</Link></li>
+                <li><Link to="/contato" className="hover:text-primary transition-colors">Contato</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="mb-4 text-sm font-bold uppercase tracking-widest text-foreground">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/termos" className="hover:text-primary transition-colors">Termos de Uso</Link></li>
+                <li><Link to="/privacidade" className="hover:text-primary transition-colors">Privacidade</Link></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-center md:flex-row md:text-left">
+            <p className="text-xs text-muted-foreground">
+              © 2026 Promo das Primas. Todos os direitos reservados.
+            </p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-tighter">
+              Alguns links podem gerar comissão de afiliado
+            </p>
+          </div>
         </div>
       </footer>
     </div>
   );
 }
+
