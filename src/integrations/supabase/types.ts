@@ -104,7 +104,7 @@ export type Database = {
         Row: {
           ativo: boolean
           atualizado_em: string
-          categoria: Database["public"]["Enums"]["categoria_produto"]
+          categoria: string
           cliques: number
           copy_gemini: string | null
           criado_em: string
@@ -116,14 +116,15 @@ export type Database = {
           link_afiliado: string
           link_short: string | null
           nome: string
-          plataforma: Database["public"]["Enums"]["plataforma_produto"]
+          plataforma: string
+
           preco: number
           preco_original: number | null
         }
         Insert: {
           ativo?: boolean
           atualizado_em?: string
-          categoria?: Database["public"]["Enums"]["categoria_produto"]
+          categoria?: string
           cliques?: number
           copy_gemini?: string | null
           criado_em?: string
@@ -135,14 +136,15 @@ export type Database = {
           link_afiliado: string
           link_short?: string | null
           nome: string
-          plataforma: Database["public"]["Enums"]["plataforma_produto"]
+          plataforma: string
+
           preco: number
           preco_original?: number | null
         }
         Update: {
           ativo?: boolean
           atualizado_em?: string
-          categoria?: Database["public"]["Enums"]["categoria_produto"]
+          categoria?: string
           cliques?: number
           copy_gemini?: string | null
           criado_em?: string
@@ -193,17 +195,206 @@ export type Database = {
         }
         Returns: boolean
       }
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  public: {
+    Tables: {
+      ads_config: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          codigo: string | null
+          criado_em: string
+          id: string
+          plataforma: Database["public"]["Enums"]["plataforma_ads"]
+          posicao: Database["public"]["Enums"]["posicao_ads"]
+          slot_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          codigo?: string | null
+          criado_em?: string
+          id?: string
+          plataforma: Database["public"]["Enums"]["plataforma_ads"]
+          posicao: Database["public"]["Enums"]["posicao_ads"]
+          slot_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          codigo?: string | null
+          criado_em?: string
+          id?: string
+          plataforma?: Database["public"]["Enums"]["plataforma_ads"]
+          posicao?: Database["public"]["Enums"]["posicao_ads"]
+          slot_id?: string | null
+        }
+        Relationships: []
+      }
+      cliques: {
+        Row: {
+          criado_em: string
+          id: string
+          produto_id: string
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          produto_id: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          produto_id?: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliques_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      perfis: {
+        Row: {
+          criado_em: string
+          email: string
+          id: string
+          is_admin: boolean | null
+        }
+        Insert: {
+          criado_em?: string
+          email: string
+          id: string
+          is_admin?: boolean | null
+        }
+        Update: {
+          criado_em?: string
+          email?: string
+          id?: string
+          is_admin?: boolean | null
+        }
+        Relationships: []
+      }
+      produtos: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          categoria: string
+          cliques: number
+          copy_gemini: string | null
+          criado_em: string
+          desconto_pct: number | null
+          destaque: boolean
+          disponivel: boolean
+          id: string
+          imagem_url: string | null
+          link_afiliado: string
+          link_short: string | null
+          nome: string
+          plataforma: string
+
+          preco: number
+          preco_original: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          categoria?: string
+          cliques?: number
+          copy_gemini?: string | null
+          criado_em?: string
+          desconto_pct?: number | null
+          destaque?: boolean
+          disponivel?: boolean
+          id?: string
+          imagem_url?: string | null
+          link_afiliado: string
+          link_short?: string | null
+          nome: string
+          plataforma: string
+
+          preco: number
+          preco_original?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          categoria?: string
+          cliques?: number
+          copy_gemini?: string | null
+          criado_em?: string
+          desconto_pct?: number | null
+          destaque?: boolean
+          disponivel?: boolean
+          id?: string
+          imagem_url?: string | null
+          link_afiliado?: string
+          link_short?: string | null
+          nome?: string
+          plataforma?: string
+          preco?: number
+          preco_original?: number | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          criado_em: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"
-      categoria_produto: "eletronicos" | "moda" | "casa" | "beleza" | "outros"
       plataforma_ads: "adsense" | "adsterra"
-      plataforma_produto:
-        | "shopee"
-        | "mercado_livre"
-        | "amazon"
-        | "shein"
-        | "outros"
+
       posicao_ads: "topo" | "rodape" | "entre_cards" | "sidebar"
     }
     CompositeTypes: {
@@ -334,13 +525,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       plataforma_ads: ["adsense", "adsterra"],
-      plataforma_produto: [
-        "shopee",
-        "mercado_livre",
-        "amazon",
-        "shein",
-        "outros",
-      ],
+
       posicao_ads: ["topo", "rodape", "entre_cards", "sidebar"],
     },
   },

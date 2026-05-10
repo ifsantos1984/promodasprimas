@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Produto, PLATAFORMA_LABEL, formatBRL } from "@/lib/produto";
+import { Produto, getLojaLabel, formatBRL } from "@/lib/produto";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -51,6 +52,18 @@ export function AdminProdutos() {
     });
   }, [produtos, platFilter, search]);
 
+  const categoriasExistentes = useMemo(() => {
+    const cats = new Set(produtos.map((p) => p.categoria).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [produtos]);
+
+  const lojasExistentes = useMemo(() => {
+    const stores = new Set(produtos.map((p) => p.plataforma).filter(Boolean));
+    return Array.from(stores).sort();
+  }, [produtos]);
+
+
+
   const toggleField = async (id: string, field: "ativo" | "disponivel" | "destaque", value: boolean) => {
     const updates: { ativo?: boolean; disponivel?: boolean; destaque?: boolean } = { [field]: value };
     const { error } = await supabase.from("produtos").update(updates).eq("id", id);
@@ -79,9 +92,11 @@ export function AdminProdutos() {
       imagem_url: fd.get("imagem_url") as string,
       link_short: fd.get("link_short") as string || null,
       link_afiliado: fd.get("link_afiliado") as string,
+      plataforma: fd.get("plataforma") as string,
       copy_gemini: fd.get("copy_gemini") as string || null,
       categoria: fd.get("categoria") as any,
     };
+
     const { error } = await supabase.from("produtos").update(updates).eq("id", editing.id);
     if (error) toast.error("Erro", { description: error.message });
     else {
@@ -127,13 +142,13 @@ export function AdminProdutos() {
           <Select value={platFilter} onValueChange={setPlatFilter}>
             <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todas plataformas</SelectItem>
-              <SelectItem value="shopee">Shopee</SelectItem>
-              <SelectItem value="mercado_livre">Mercado Livre</SelectItem>
-              <SelectItem value="amazon">Amazon</SelectItem>
-              <SelectItem value="shein">Shein</SelectItem>
+              <SelectItem value="todos">Todas as Lojas</SelectItem>
+              {lojasExistentes.map((loja) => (
+                <SelectItem key={loja} value={loja}>{getLojaLabel(loja)}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
+
           <Button onClick={sincronizar} disabled={syncing} variant="hero" className="gap-1.5">
             {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Sincronizar todos
@@ -159,8 +174,9 @@ export function AdminProdutos() {
               <TableRow>
                 <TableHead className="w-16"></TableHead>
                 <TableHead>Nome</TableHead>
-                <TableHead>Plataforma</TableHead>
+                <TableHead>Loja</TableHead>
                 <TableHead>Preço</TableHead>
+
                 <TableHead className="text-center">Cliques</TableHead>
                 <TableHead className="text-center">Destaque</TableHead>
                 <TableHead className="text-center">Ativo</TableHead>
@@ -182,7 +198,8 @@ export function AdminProdutos() {
                     <TableCell className="max-w-xs">
                       <div className="line-clamp-2 text-sm font-medium">{p.nome}</div>
                     </TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs">{PLATAFORMA_LABEL[p.plataforma]}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="text-xs">{getLojaLabel(p.plataforma)}</Badge></TableCell>
+
                     <TableCell className="font-mono text-sm">{formatBRL(p.preco)}</TableCell>
                     <TableCell className="text-center text-sm">{p.cliques}</TableCell>
                     <TableCell className="text-center">
@@ -224,18 +241,28 @@ export function AdminProdutos() {
               </div>
               <div><Label>Imagem URL</Label><Input name="imagem_url" defaultValue={editing.imagem_url ?? ""} required /></div>
               <div><Label>Link afiliado</Label><Input name="link_afiliado" defaultValue={editing.link_afiliado} required /></div>
-              <div><Label>Link short</Label><Input name="link_short" defaultValue={editing.link_short ?? ""} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Loja</Label>
+                  <Input name="plataforma" list="lojas-list" defaultValue={editing.plataforma} required />
+                  <datalist id="lojas-list">
+                    {lojasExistentes.map((l) => (
+                      <option key={l} value={l}>{getLojaLabel(l)}</option>
+                    ))}
+                  </datalist>
+                </div>
+                <div><Label>Link short</Label><Input name="link_short" defaultValue={editing.link_short ?? ""} /></div>
+              </div>
+
+
               <div><Label>Categoria</Label>
-                <Select name="categoria" defaultValue={editing.categoria}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="eletronicos">Eletrônicos</SelectItem>
-                    <SelectItem value="moda">Moda</SelectItem>
-                    <SelectItem value="casa">Casa</SelectItem>
-                    <SelectItem value="beleza">Beleza</SelectItem>
-                    <SelectItem value="outros">Outros</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input name="categoria" list="categorias-list" defaultValue={editing.categoria} required />
+                <datalist id="categorias-list">
+                  {categoriasExistentes.map((c) => (
+                    <option key={c} value={c}>
+                      {c.charAt(0).toUpperCase() + c.slice(1)}
+                    </option>
+                  ))}
+                </datalist>
               </div>
               <div><Label>Copy</Label><Textarea name="copy_gemini" defaultValue={editing.copy_gemini ?? ""} rows={2} /></div>
               <DialogFooter>

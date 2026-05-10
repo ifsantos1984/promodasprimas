@@ -16,28 +16,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { MusicPlayer } from "@/components/MusicPlayer";
-import { Categoria } from "@/lib/produto";
+import { Categoria, getLojaLabel } from "@/lib/produto";
 import { MasonryGrid } from "@/components/MasonryGrid";
+import { Label } from "@/components/ui/label";
 
 type Sort = "menor_preco" | "maior_preco" | "recentes" | "maior_desconto";
 type Filtro = Plataforma | "todos";
 
-const FILTROS: { value: Filtro; label: string }[] = [
-  { value: "todos", label: "Todos" },
-  { value: "shopee", label: "Shopee" },
-  { value: "mercado_livre", label: "Mercado Livre" },
-  { value: "amazon", label: "Amazon" },
-  { value: "shein", label: "Shein" },
-];
 
-const FILTROS_CATEGORIA: { value: Categoria | "todas"; label: string }[] = [
-  { value: "todas", label: "Todas Categorias" },
-  { value: "eletronicos", label: "Eletrônicos" },
-  { value: "moda", label: "Moda" },
-  { value: "casa", label: "Casa" },
-  { value: "beleza", label: "Beleza" },
-  { value: "outros", label: "Outros" },
-];
+
 
 interface AdConfig {
   id: string;
@@ -104,6 +91,17 @@ export default function Index() {
     return { lowestByPlatform: low };
   }, [produtos]);
 
+  const categoriasDinamicas = useMemo(() => {
+    const cats = new Set(produtos.map((p) => p.categoria).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [produtos]);
+
+  const lojasDinamicas = useMemo(() => {
+    const stores = new Set(produtos.map((p) => p.plataforma).filter(Boolean));
+    return Array.from(stores).sort();
+  }, [produtos]);
+
+
   const filtrados = useMemo(() => {
     let r = produtos;
     if (filtro !== "todos") r = r.filter((p) => p.plataforma === filtro);
@@ -138,11 +136,11 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background selection:bg-primary/20">
+    <div className="min-h-screen bg-background selection:bg-primary/20 flex flex-col">
       <MusicPlayer />
-      
+
       {/* HEADER - Pinterest Style */}
-      <header className="sticky top-0 z-40 bg-background/95 py-4 backdrop-blur-md">
+      <header className="sticky top-0 z-40 bg-background/95 py-4 backdrop-blur-md border-b border-border/50">
         <div className="container flex items-center gap-4">
           <Link to="/" className="flex shrink-0 items-center gap-3 transition-transform hover:scale-105 active:scale-95">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary p-2">
@@ -151,7 +149,7 @@ export default function Index() {
             <span className="hidden font-bold tracking-tighter text-foreground sm:block text-xl">Promo das Primas</span>
           </Link>
           
-          <div className="relative flex-1">
+          <div className="relative flex-1 max-w-2xl mx-auto">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar as melhores ofertas..."
@@ -161,7 +159,7 @@ export default function Index() {
             />
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2 lg:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -170,83 +168,103 @@ export default function Index() {
             >
               <SlidersHorizontal className="h-5 w-5" />
             </Button>
-            {/* Admin oculto conforme solicitado */}
           </div>
         </div>
       </header>
+      
+      <div className="container flex gap-8 py-8 flex-1">
+        {/* SIDEBAR - Filtros e Lojas */}
+        <aside className="hidden lg:flex w-64 shrink-0 flex-col gap-8 sticky top-24 h-fit">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-primary">
+              <SlidersHorizontal className="h-4 w-4" />
+              <h3 className="font-bold text-sm uppercase tracking-wider">Filtros</h3>
+            </div>
+            
+            <div className="space-y-6">
+              {/* LOJAS NA SIDEBAR */}
 
-      {/* FILTROS EXPANSÍVEIS */}
-      <AnimatePresence>
-        {showFilters && (
-          <motion.section
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-b border-border bg-background"
-          >
-            <div className="container py-6">
-              <div className="flex flex-col gap-6">
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Plataformas</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {FILTROS.map((f) => (
-                      <Button
-                        key={f.value}
-                        size="sm"
-                        variant={filtro === f.value ? "default" : "secondary"}
-                        onClick={() => setFiltro(f.value)}
-                        className="rounded-full font-bold"
-                      >
-                        {f.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Categorias</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {FILTROS_CATEGORIA.map((f) => (
-                      <Button
-                        key={f.value}
-                        size="sm"
-                        variant={filtroCategoria === f.value ? "default" : "secondary"}
-                        onClick={() => setFiltroCategoria(f.value)}
-                        className="rounded-full font-bold"
-                      >
-                        {f.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Ordenar por</h4>
-                  <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
-                    <SelectTrigger className="w-[200px] rounded-full bg-secondary border-none font-bold">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="maior_desconto">Maior desconto</SelectItem>
-                      <SelectItem value="menor_preco">Menor preço</SelectItem>
-                      <SelectItem value="maior_preco">Maior preço</SelectItem>
-                      <SelectItem value="recentes">Mais recentes</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-3">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">Lojas</Label>
+                <div className="flex flex-col gap-1.5">
+                  <Button
+                    size="sm"
+                    variant={filtro === "todos" ? "default" : "ghost"}
+                    onClick={() => setFiltro("todos")}
+                    className="justify-start rounded-xl font-medium h-9"
+                  >
+                    Todas as Lojas
+                  </Button>
+                  {lojasDinamicas.map((loja) => (
+                    <Button
+                      key={loja}
+                      size="sm"
+                      variant={filtro === loja ? "default" : "ghost"}
+                      onClick={() => setFiltro(loja)}
+                      className="justify-start rounded-xl font-medium h-9 text-left"
+                    >
+                      {getLojaLabel(loja)}
+                    </Button>
+                  ))}
                 </div>
               </div>
-            </div>
-          </motion.section>
-        )}
-      </AnimatePresence>
 
-      <main className="container py-8">
-        {/* STATS */}
-        {!showFilters && (
+              {/* CATEGORIAS NA SIDEBAR */}
+              <div className="space-y-3">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">Categorias</Label>
+                <div className="flex flex-col gap-1.5">
+                  <Button
+                    size="sm"
+                    variant={filtroCategoria === "todas" ? "default" : "ghost"}
+                    onClick={() => setFiltroCategoria("todas")}
+                    className="justify-start rounded-xl font-medium h-9"
+                  >
+                    Todas Categorias
+                  </Button>
+                  {categoriasDinamicas.map((cat) => (
+                    <Button
+                      key={cat}
+                      size="sm"
+                      variant={filtroCategoria === cat ? "default" : "ghost"}
+                      onClick={() => setFiltroCategoria(cat)}
+                      className="justify-start rounded-xl font-medium h-9 text-left"
+                    >
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ORDENAÇÃO NA SIDEBAR */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">Ordenar por</Label>
+                <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
+                  <SelectTrigger className="w-full rounded-xl bg-secondary/50 border-none font-medium h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="maior_desconto">Maior desconto</SelectItem>
+                    <SelectItem value="menor_preco">Menor preço</SelectItem>
+                    <SelectItem value="maior_preco">Maior preço</SelectItem>
+                    <SelectItem value="recentes">Mais recentes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          
+          {/* Espaço para info extra ou apenas respiro */}
+          <div className="mt-auto pt-8 text-[10px] text-muted-foreground uppercase tracking-widest text-center opacity-50">
+            Curadoria Exclusiva
+          </div>
+        </aside>
+
+        <main className="flex-1 min-w-0">
+          {/* STATS */}
           <div className="mb-8">
             <StatsBar produtos={produtos} />
           </div>
-        )}
+
 
         {/* OFERTAS EM DESTAQUE */}
         {destaques.length > 0 && (
@@ -314,9 +332,11 @@ export default function Index() {
             <AdSlot codigo={adRodape.codigo} posicao="rodape" />
           </div>
         )}
-      </main>
+        </main>
+      </div>
 
       {/* FOOTER */}
+
       <footer className="py-16 border-t border-border bg-secondary/30">
         <div className="container">
           <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">

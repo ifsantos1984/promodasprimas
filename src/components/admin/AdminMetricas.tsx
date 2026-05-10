@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Produto, PLATAFORMA_LABEL } from "@/lib/produto";
+import { Produto, getLojaLabel } from "@/lib/produto";
+
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid,
@@ -39,9 +40,10 @@ export function AdminMetricas() {
     return acc;
   }, {});
   const dataPlataforma = Object.entries(porPlataforma).map(([k, v]) => ({
-    name: PLATAFORMA_LABEL[k as keyof typeof PLATAFORMA_LABEL] ?? k,
+    name: getLojaLabel(k),
     cliques: v,
   }));
+
 
   // top 10 produtos
   const top10 = [...produtos].sort((a, b) => b.cliques - a.cliques).slice(0, 10);
@@ -132,7 +134,8 @@ export function AdminMetricas() {
                 <img src={p.imagem_url ?? "/placeholder.svg"} alt="" className="h-9 w-9 rounded object-cover" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{p.nome}</p>
-                  <p className="text-xs text-muted-foreground">{PLATAFORMA_LABEL[p.plataforma]}</p>
+                  <p className="text-xs text-muted-foreground">{getLojaLabel(p.plataforma)}</p>
+
                 </div>
                 <span className="font-display text-sm font-bold text-primary">{p.cliques}</span>
               </li>
@@ -151,7 +154,8 @@ export function AdminMetricas() {
                   <img src={p.imagem_url ?? "/placeholder.svg"} alt="" className="h-9 w-9 rounded object-cover" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{p.nome}</p>
-                    <p className="text-xs text-muted-foreground">{PLATAFORMA_LABEL[p.plataforma]}</p>
+                    <p className="text-xs text-muted-foreground">{getLojaLabel(p.plataforma)}</p>
+
                   </div>
                 </li>
               ))}

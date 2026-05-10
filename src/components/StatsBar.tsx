@@ -1,6 +1,7 @@
 import { Sparkles, TrendingDown, Package, Tag } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Produto, PLATAFORMA_LABEL, formatBRL } from "@/lib/produto";
+import { Produto, formatBRL } from "@/lib/produto";
+
 
 export function StatsBar({ produtos }: { produtos: Produto[] }) {
   if (produtos.length === 0) return null;
@@ -17,7 +18,8 @@ export function StatsBar({ produtos }: { produtos: Produto[] }) {
     { icon: Package, label: "Ofertas ativas", value: total.toString(), color: "from-primary to-primary-glow" },
     { icon: TrendingDown, label: "Menor preço", value: formatBRL(menor), color: "from-price-low to-emerald-500" },
     { icon: Tag, label: "Maior preço", value: formatBRL(maior), color: "from-secondary to-primary" },
-    { icon: Sparkles, label: "Plataformas", value: Object.keys(porPlataforma).length.toString(), color: "from-accent to-primary-glow" },
+    { icon: Sparkles, label: "Lojas", value: Object.keys(porPlataforma).length.toString(), color: "from-accent to-primary-glow" },
+
   ];
 
   return (

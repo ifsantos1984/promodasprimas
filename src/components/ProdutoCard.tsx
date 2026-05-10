@@ -4,10 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Produto,
-  PLATAFORMA_LABEL,
-  PLATAFORMA_COLOR_CLASS,
+  getLojaLabel,
+  getLojaColor,
   formatBRL,
 } from "@/lib/produto";
+
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -44,9 +45,10 @@ export function ProdutoCard({ produto, isLowestInPlatform, isHighestInPlatform, 
         {/* OVERLAY ON HOVER (Pinterest Style) */}
         <div className="absolute inset-0 flex flex-col justify-between p-4 opacity-0 transition-opacity duration-300 group-hover:bg-black/10 group-hover:opacity-100">
           <div className="flex items-center justify-between gap-2">
-            <Badge className={cn("rounded-full border-none px-3 font-bold shadow-md", PLATAFORMA_COLOR_CLASS[produto.plataforma])}>
-              {PLATAFORMA_LABEL[produto.plataforma]}
+            <Badge className={cn("rounded-full border-none px-3 font-bold shadow-md", getLojaColor(produto.plataforma))}>
+              {getLojaLabel(produto.plataforma)}
             </Badge>
+
             
             {desconto && desconto > 0 && (
               <Badge className="bg-primary px-3 font-bold text-white shadow-md">
@@ -58,8 +60,9 @@ export function ProdutoCard({ produto, isLowestInPlatform, isHighestInPlatform, 
           <div className="flex items-center justify-between gap-2">
             <div className="flex h-10 flex-1 items-center justify-between rounded-full bg-white/95 px-4 py-1.5 backdrop-blur-sm shadow-lg">
               <span className="truncate text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                {produto.plataforma}
+                {getLojaLabel(produto.plataforma)}
               </span>
+
               <ExternalLink className="h-3.5 w-3.5 text-primary" />
             </div>
           </div>

@@ -1,5 +1,5 @@
-export type Plataforma = "shopee" | "mercado_livre" | "amazon" | "shein" | "outros";
-export type Categoria = "eletronicos" | "moda" | "casa" | "beleza" | "outros";
+export type Plataforma = string;
+export type Categoria = string;
 
 export interface Produto {
   id: string;
@@ -21,7 +21,7 @@ export interface Produto {
   atualizado_em: string;
 }
 
-export const PLATAFORMA_LABEL: Record<Plataforma, string> = {
+export const LOJA_LABEL: Record<string, string> = {
   shopee: "Shopee",
   mercado_livre: "Mercado Livre",
   amazon: "Amazon",
@@ -29,21 +29,23 @@ export const PLATAFORMA_LABEL: Record<Plataforma, string> = {
   outros: "Outros",
 };
 
-export const CATEGORIA_LABEL: Record<Categoria, string> = {
-  eletronicos: "Eletrônicos",
-  moda: "Moda",
-  casa: "Casa",
-  beleza: "Beleza",
-  outros: "Outros",
-};
-
-export const PLATAFORMA_COLOR_CLASS: Record<Plataforma, string> = {
+export const LOJA_COLOR_CLASS: Record<string, string> = {
   shopee: "bg-shopee text-shopee-foreground",
   mercado_livre: "bg-mercado-livre text-mercado-livre-foreground",
   amazon: "bg-amazon text-amazon-foreground",
   shein: "bg-shein text-shein-foreground",
-  outros: "bg-muted text-muted-foreground",
 };
+
+export function getLojaLabel(loja: string) {
+  if (!loja) return "Outros";
+  return LOJA_LABEL[loja] || loja.charAt(0).toUpperCase() + loja.slice(1).replace(/_/g, " ");
+}
+
+
+export function getLojaColor(loja: string) {
+  return LOJA_COLOR_CLASS[loja] || "bg-muted text-muted-foreground";
+}
+
 
 export function formatBRL(value: number) {
   return value.toLocaleString("pt-BR", {
