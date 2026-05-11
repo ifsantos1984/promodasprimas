@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Megaphone, Layout, Sidebar as SidebarIcon, ArrowDown, Layers } from "lucide-react";
 
-type Posicao = "topo" | "rodape" | "entre_cards" | "sidebar";
+type Posicao = "topo" | "rodape" | "entre_cards" | "sidebar" | "global";
 type PlataformaAds = "adsense" | "adsterra";
 
 interface Ad {
@@ -23,6 +23,7 @@ interface Ad {
 }
 
 const POSICAO_INFO: Record<Posicao, { label: string; icon: typeof Layout; desc: string }> = {
+  global: { label: "Global", icon: Megaphone, desc: "Popunders e Social Bars (scripts invisíveis)" },
   topo: { label: "Topo", icon: Layout, desc: "Banner abaixo do header" },
   entre_cards: { label: "Entre cards", icon: Layers, desc: "Inserido a cada 8 produtos" },
   sidebar: { label: "Sidebar", icon: SidebarIcon, desc: "Coluna lateral (desktop)" },

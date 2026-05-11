@@ -28,7 +28,7 @@ type Filtro = Plataforma | "todos";
 
 interface AdConfig {
   id: string;
-  posicao: "topo" | "rodape" | "entre_cards" | "sidebar";
+  posicao: "topo" | "rodape" | "entre_cards" | "sidebar" | "global";
   codigo: string | null;
   ativo: boolean;
 }
@@ -75,6 +75,7 @@ export default function Index() {
 
   const adTopo = ads.find((a) => a.posicao === "topo");
   const adRodape = ads.find((a) => a.posicao === "rodape");
+  const adGlobal = ads.find((a) => a.posicao === "global");
 
   const { lowestByPlatform } = useMemo(() => {
     const low: Record<string, string> = {};
@@ -138,6 +139,7 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background selection:bg-primary/20 flex flex-col">
       <MusicPlayer />
+      {adGlobal && <AdSlot codigo={adGlobal.codigo} posicao="global" />}
 
       {/* HEADER - Pinterest Style */}
       <header className="sticky top-0 z-40 bg-background/95 py-4 backdrop-blur-md border-b border-border/50">
