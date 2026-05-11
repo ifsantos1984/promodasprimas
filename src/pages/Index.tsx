@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { MusicPlayer } from "@/components/MusicPlayer";
-import { Categoria, getLojaLabel } from "@/lib/produto";
+import { Categoria, getLojaLabel, getCategoriaLabel } from "@/lib/produto";
 import { MasonryGrid } from "@/components/MasonryGrid";
 import { Label } from "@/components/ui/label";
 
@@ -229,7 +229,7 @@ export default function Index() {
                       onClick={() => setFiltroCategoria(cat)}
                       className="justify-start rounded-xl font-medium h-9 text-left"
                     >
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      {getCategoriaLabel(cat)}
                     </Button>
                   ))}
                 </div>

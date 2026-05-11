@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Produto, getLojaLabel, formatBRL } from "@/lib/produto";
+import { Produto, getLojaLabel, getCategoriaLabel, formatBRL } from "@/lib/produto";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Pencil, Trash2, Search } from "lucide-react";
+import { Loader2, RefreshCw, Pencil, Trash2, Search, Sparkles } from "lucide-react";
 
 export function AdminProdutos() {
   const qc = useQueryClient();
@@ -31,6 +31,9 @@ export function AdminProdutos() {
   const [syncing, setSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
   const [syncReport, setSyncReport] = useState<{ total: number; disponiveis: number; indisponiveis: number; erros: number } | null>(null);
+  const [categorizing, setCategorizing] = useState<Set<string>>(new Set());
+  const [bulkCategorizing, setBulkCategorizing] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(0);
 
   const { data: produtos = [], isLoading } = useQuery({
     queryKey: ["admin-produtos"],
@@ -63,6 +66,61 @@ export function AdminProdutos() {
   }, [produtos]);
 
 
+
+  // Auto-categoriza um único produto via Edge Function
+  const autoCategorizar = async (produto: Produto) => {
+    setCategorizing((prev) => new Set(prev).add(produto.id));
+    try {
+      const { data, error } = await supabase.functions.invoke("categorize-produto", {
+        body: { nome: produto.nome, produto_id: produto.id },
+      });
+      if (error) throw error;
+      toast.success(`Categorizado como "${getCategoriaLabel(data.categoria)}"`  , {
+        description: produto.nome.slice(0, 60),
+      });
+      qc.invalidateQueries({ queryKey: ["admin-produtos"] });
+    } catch (err) {
+      toast.error("Erro ao categorizar", {
+        description: err instanceof Error ? err.message : "Erro desconhecido",
+      });
+    } finally {
+      setCategorizing((prev) => {
+        const next = new Set(prev);
+        next.delete(produto.id);
+        return next;
+      });
+    }
+  };
+
+  // Auto-categoriza todos os produtos com categoria 'outros'
+  const autoCategoriarTodos = async () => {
+    const semCategoria = produtos.filter((p) => !p.categoria || p.categoria === "outros");
+    if (semCategoria.length === 0) {
+      toast.info("Nenhum produto sem categoria!");
+      return;
+    }
+    setBulkCategorizing(true);
+    setBulkProgress(0);
+    let ok = 0;
+    for (let i = 0; i < semCategoria.length; i++) {
+      const p = semCategoria[i];
+      try {
+        await supabase.functions.invoke("categorize-produto", {
+          body: { nome: p.nome, produto_id: p.id },
+        });
+        ok++;
+      } catch {
+        // ignora erros individuais
+      }
+      setBulkProgress(Math.round(((i + 1) / semCategoria.length) * 100));
+    }
+    setBulkCategorizing(false);
+    setBulkProgress(0);
+    toast.success("Auto-categorização concluída", {
+      description: `${ok} de ${semCategoria.length} produtos categorizados`,
+    });
+    qc.invalidateQueries({ queryKey: ["admin-produtos"] });
+  };
 
   const toggleField = async (id: string, field: "ativo" | "disponivel" | "destaque", value: boolean) => {
     const updates: { ativo?: boolean; disponivel?: boolean; destaque?: boolean } = { [field]: value };
@@ -153,11 +211,29 @@ export function AdminProdutos() {
             {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Sincronizar todos
           </Button>
+
+          <Button
+            onClick={autoCategoriarTodos}
+            disabled={bulkCategorizing}
+            variant="outline"
+            className="gap-1.5"
+          >
+            {bulkCategorizing
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <Sparkles className="h-4 w-4 text-violet-500" />}
+            Auto-categorizar
+          </Button>
         </div>
         {syncing && (
           <div className="mt-3">
             <Progress value={syncProgress} />
             <p className="mt-1 text-xs text-muted-foreground">Verificando links dos produtos...</p>
+          </div>
+        )}
+        {bulkCategorizing && (
+          <div className="mt-3">
+            <Progress value={bulkProgress} className="[&>div]:bg-violet-500" />
+            <p className="mt-1 text-xs text-muted-foreground">Classificando com IA... {bulkProgress}%</p>
           </div>
         )}
         {syncReport && (
@@ -175,8 +251,8 @@ export function AdminProdutos() {
                 <TableHead className="w-16"></TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Loja</TableHead>
+                <TableHead>Categoria</TableHead>
                 <TableHead>Preço</TableHead>
-
                 <TableHead className="text-center">Cliques</TableHead>
                 <TableHead className="text-center">Destaque</TableHead>
                 <TableHead className="text-center">Ativo</TableHead>
@@ -186,9 +262,9 @@ export function AdminProdutos() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">Carregando...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="py-8 text-center text-muted-foreground">Carregando...</TableCell></TableRow>
               ) : filtrados.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">Nenhum produto</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="py-8 text-center text-muted-foreground">Nenhum produto</TableCell></TableRow>
               ) : (
                 filtrados.map((p) => (
                   <TableRow key={p.id}>
@@ -199,7 +275,14 @@ export function AdminProdutos() {
                       <div className="line-clamp-2 text-sm font-medium">{p.nome}</div>
                     </TableCell>
                     <TableCell><Badge variant="outline" className="text-xs">{getLojaLabel(p.plataforma)}</Badge></TableCell>
-
+                    <TableCell>
+                      <Badge
+                        variant={p.categoria && p.categoria !== "outros" ? "secondary" : "outline"}
+                        className="text-xs whitespace-nowrap"
+                      >
+                        {getCategoriaLabel(p.categoria)}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="font-mono text-sm">{formatBRL(p.preco)}</TableCell>
                     <TableCell className="text-center text-sm">{p.cliques}</TableCell>
                     <TableCell className="text-center">
@@ -213,6 +296,17 @@ export function AdminProdutos() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Auto-categorizar com IA"
+                          onClick={() => autoCategorizar(p)}
+                          disabled={categorizing.has(p.id)}
+                        >
+                          {categorizing.has(p.id)
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <Sparkles className="h-3.5 w-3.5 text-violet-500" />}
+                        </Button>
                         <Button size="icon" variant="ghost" onClick={() => setEditing(p)}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
