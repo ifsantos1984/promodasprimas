@@ -11,11 +11,30 @@ export function AdSlot({ codigo, posicao }: Props) {
 
   useEffect(() => {
     if (!codigo || !ref.current) return;
-    // Inject script-aware ad code
-    const range = document.createRange();
-    const fragment = range.createContextualFragment(codigo);
+
+    // Clear existing content
     ref.current.innerHTML = "";
-    ref.current.appendChild(fragment);
+
+    // Adsterra and other ad networks often need script execution.
+    // contextualFragment is good, but manually recreating scripts is safer in some browsers.
+    const container = document.createElement("div");
+    container.innerHTML = codigo;
+
+    const scripts = container.querySelectorAll("script");
+    const nonScripts = Array.from(container.childNodes).filter(n => n.nodeName !== "SCRIPT");
+
+    // Append non-script elements (like <div> containers for ads)
+    nonScripts.forEach(node => ref.current?.appendChild(node.cloneNode(true)));
+
+    // Append and execute scripts
+    scripts.forEach(oldScript => {
+      const newScript = document.createElement("script");
+      Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+      if (oldScript.innerHTML) {
+        newScript.innerHTML = oldScript.innerHTML;
+      }
+      ref.current?.appendChild(newScript);
+    });
   }, [codigo]);
 
   if (!codigo) {
